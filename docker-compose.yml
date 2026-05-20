@@ -6,12 +6,29 @@ services:
     container_name: eventbridge_rabbitmq
     ports:
       - "5672:5672"
-      - "15672:15672" # Веб-интерфейс для мониторинга очередей
+      - "15672:15672" # Web UI for queue monitoring
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+
   redis:
     image: redis:7-alpine
     container_name: eventbridge_redis
     ports:
       - "6379:6379"
+
+  pdf_ticket_service:
+    build: ./pdf_ticket_service
+    container_name: pdf_ticket_service
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      PDF_OUTPUT_DIR: /app/generated_tickets
+    volumes:
+      - ticket_pdfs:/app/generated_tickets
+
+volumes:
+  ticket_pdfs:
