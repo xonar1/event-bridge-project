@@ -1,0 +1,16 @@
+name: 🔍 Validate PR Source Branch
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR is from forbidden branch
+        if: github.head_ref == 'main' || github.head_ref == 'dev' || startsWith(github.head_ref, 'student') == false
+        run: |
+          echo "❌ PR должен создаваться из ветки формата studentX/название-модуля"
+          echo "❌ Например: student1/email-service"
+          exit 1
