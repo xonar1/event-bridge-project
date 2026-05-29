@@ -1,10 +1,11 @@
+# docker-compose.yml
 services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: eventbridge_rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -27,7 +28,7 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
+      RABBITMQ_PASSWORD: guest
     networks:
       - eventbridge-net
 
@@ -48,24 +49,6 @@ services:
     networks:
       - eventbridge-net
 
-  email_service:
-    build:
-      context: ./email-service
-    container_name: eventbridge_email_service
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      orchestrator:
-        condition: service_started
-    restart: on-failure
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
-    networks:
-      - eventbridge-net
-
   redis:
     image: redis:7-alpine
     container_name: eventbridge_redis
@@ -74,34 +57,27 @@ services:
     networks:
       - eventbridge-net
 
-  # 
-  critical_alert_service:
+  excel_report_service:
     build:
-      context: ./critical_alert_service
-    container_name: eventbridge_critical_alert
+      context: ./excel_report_service
+    container_name: eventbridge_excel_report
     depends_on:
-      orchestrator:
-        condition: service_started
-      api_gateway:
-        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
-      QUEUE_NAME: critical_alert_queue
-      API_GATEWAY_HOST: api_gateway
-      API_GATEWAY_PORT: 8000
-      RUN_API_TESTS: "true"
-      RABBITMQ_PASS: guest
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      STATS_INTERVAL: "10"
-      RECONNECT_DELAY: "5"
-      MAX_RECONNECT_ATTEMPTS: "0"
-    restart: unless-stopped
+      REPORT_FILE: /reports/events_report.xlsx
+      BUFFER_SIZE: 10
+      BUFFER_FLUSH_INTERVAL: 30
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./excel_reports:/reports  
     networks:
       - eventbridge-net
+    restart: unless-stopped
 
 networks:
   eventbridge-net:
