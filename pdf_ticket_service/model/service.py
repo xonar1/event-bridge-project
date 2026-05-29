@@ -2,8 +2,9 @@ import logging
 import os
 from dataclasses import dataclass, field
 from typing import Optional
-from .eventReger import RegistrationEvent
-from .pdfgen import generate_pdf
+
+from model.eventReger import RegistrationEvent
+from model.pdfgen import generate_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -41,18 +42,11 @@ class TicketService:
             raise ValueError("event_name is required")
 
     def _generate(self, event: RegistrationEvent) -> TicketResult:
-        filename = os.path.join(
-            self.output_dir,
-            f"ticket_{event.registration_id}.pdf"
-        )
+        filename = os.path.join(self.output_dir, f"ticket_{event.registration_id}.pdf")
         data = event.model_dump()
         generate_pdf(data, filename)
         logger.info("Ticket generated: %s", filename)
-        return TicketResult(
-            success=True,
-            filename=filename,
-            registration_id=event.registration_id,
-        )
+        return TicketResult(success=True, filename=filename, registration_id=event.registration_id)
 
     def get_ticket_by_id(self, ticket_id: str) -> TicketResult:
         filename = os.path.join(self.output_dir, f"ticket_{ticket_id}.pdf")
